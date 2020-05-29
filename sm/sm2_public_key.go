@@ -20,10 +20,11 @@ func PublicKeyFromBytes(key [33]byte) (*PublicKey, error) {
 
 	var X, Y *big.Int
 	X = new(big.Int).SetBytes(key[1:])
-	X = X.Mod(X, P)
+	X.Mod(X, P)
 
-	ySqured := new(big.Int).Exp(X, three, P)
-	ySqured.Sub(ySqured, new(big.Int).Mul(X, three))
+	xCubed := new(big.Int).Exp(X, three, P)
+	threeX := new(big.Int).Mul(X, three)
+	ySqured := new(big.Int).Sub(xCubed, threeX)
 	ySqured.Add(ySqured, B)
 	Y = new(big.Int).ModSqrt(ySqured, P)
 	if Y == nil {
@@ -31,8 +32,7 @@ func PublicKeyFromBytes(key [33]byte) (*PublicKey, error) {
 	}
 
 	if key[0] != byte(Y.Bit(0)+2) {
-		Y.Neg(Y)
-		Y.Mod(Y, P)
+		Y.Sub(P, Y)
 	}
 	return &PublicKey{
 		X:   X,
