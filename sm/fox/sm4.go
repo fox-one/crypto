@@ -3,7 +3,7 @@ package fsm
 import (
 	"crypto/cipher"
 
-	"github.com/fox-one/hxnet-sdk/common"
+	"github.com/fox-one/crypto/common"
 	"github.com/tjfoc/gmsm/sm4"
 )
 
