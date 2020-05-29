@@ -23,7 +23,7 @@ func PublicKeyFromBytes(key [33]byte) (*PublicKey, error) {
 	X = X.Mod(X, P)
 
 	ySqured := new(big.Int).Exp(X, three, P)
-	ySqured.Add(ySqured, new(big.Int).Mul(X, three))
+	ySqured.Sub(ySqured, new(big.Int).Mul(X, three))
 	ySqured.Add(ySqured, B)
 	Y = new(big.Int).ModSqrt(ySqured, P)
 	if Y == nil {
