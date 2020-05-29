@@ -2,11 +2,16 @@ package cfca
 
 import (
 	"crypto/rand"
+	"math/big"
 	mathRand "math/rand"
 	"testing"
 
 	"github.com/fox-one/crypto/sm"
 )
+
+func init() {
+	Load("/license/cfca.license")
+}
 
 func BenchmarkSM2Sign(b *testing.B) {
 	b.ResetTimer()
@@ -15,6 +20,7 @@ func BenchmarkSM2Sign(b *testing.B) {
 	var raw = make([]byte, mathRand.Int()%1688)
 	rand.Reader.Read(raw)
 
+	N, _ := new(big.Int).SetString("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123", 16)
 	d, err := rand.Int(rand.Reader, N)
 	if err != nil {
 		b.Fatal(err)
