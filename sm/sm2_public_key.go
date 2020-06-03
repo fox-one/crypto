@@ -3,6 +3,7 @@ package sm
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 )
@@ -14,32 +15,39 @@ type (
 	}
 )
 
-func PublicKeyFromBytes(key [33]byte) (*PublicKey, error) {
+func PublicKeyFromBytes(key *[33]byte) (*PublicKey, error) {
 	if key[0] != 2 && key[0] != 3 {
 		return nil, fmt.Errorf("invalid key with prefix: %d", key[0])
 	}
 
-	var X, Y *big.Int
-	X = new(big.Int).SetBytes(key[1:])
-	X.Mod(X, P)
+	pub := PublicKey{}
+	X := new(big.Int).SetBytes(key[1:])
+	pub.X = X.Mod(X, P)
 
-	xCubed := new(big.Int).Exp(X, three, P)
-	threeX := new(big.Int).Mul(X, three)
-	ySqured := new(big.Int).Sub(xCubed, threeX)
-	ySqured.Add(ySqured, B)
-	Y = new(big.Int).ModSqrt(ySqured, P)
-	if Y == nil {
-		return nil, fmt.Errorf("invalid key value: %s", hex.EncodeToString(key[:]))
+	{
+		xCubed := new(big.Int).Exp(pub.X, three, P)
+		threeX := new(big.Int).Mul(pub.X, three)
+		ySqured := new(big.Int).Sub(xCubed, threeX)
+		ySqured.Add(ySqured, B)
+		pub.Y = new(big.Int).ModSqrt(ySqured, P)
+		if pub.Y == nil || !pub.CheckKey() {
+			return nil, fmt.Errorf("invalid key value: %s", hex.EncodeToString(key[:]))
+		}
+
+		if key[0] != byte(pub.Y.Bit(0)+2) {
+			pub.Y.Sub(P, pub.Y)
+		}
 	}
 
-	if key[0] != byte(Y.Bit(0)+2) {
-		Y.Sub(P, Y)
+	// update key
+	if pub.X.Cmp(X) != 0 {
+		var k [33]byte
+		k[0] = key[0]
+		copy(k[33-len(pub.X.Bytes()):], pub.X.Bytes())
+		*key = k
 	}
-	return &PublicKey{
-		X:   X,
-		Y:   Y,
-		key: &key,
-	}, nil
+
+	return &pub, nil
 }
 
 func (p *PublicKey) Bytes() [33]byte {
@@ -59,12 +67,18 @@ func (p *PublicKey) String() string {
 }
 
 func (p PublicKey) CheckKey() bool {
-	return sm2P256.IsOnCurve(p.X, p.Y)
+	if p.X.Sign() == 0 || (Gnx.Cmp(p.X) == 0 && Gny.Cmp(p.Y) == 0) {
+		return false
+	}
+	return true
 }
 
 func (p PublicKey) AddPublic(p1 PublicKey) (*PublicKey, error) {
 	s := PublicKey{}
 	s.X, s.Y = sm2P256.Add(p.X, p.Y, p1.X, p1.Y)
+	if !s.CheckKey() {
+		return &s, errors.New("invalid public key")
+	}
 	return &s, nil
 }
 
@@ -72,6 +86,9 @@ func (p PublicKey) SubPublic(p1 PublicKey) (*PublicKey, error) {
 	s := PublicKey{}
 	Y1 := new(big.Int).Neg(p1.Y)
 	s.X, s.Y = sm2P256.Add(p.X, p.Y, p1.X, Y1)
+	if !s.CheckKey() {
+		return &s, errors.New("invalid public key")
+	}
 	return &s, nil
 }
 
@@ -84,7 +101,7 @@ func (p PublicKey) ScalarHash(outputIndex uint64) *PrivateKey {
 	priv := PrivateKey{}
 	for {
 		priv.D = new(big.Int).SetBytes(h[:])
-		priv.D = priv.D.Mod(priv.D, N)
+		priv.D.Mod(priv.D, N)
 		if priv.CheckScalar() {
 			break
 		}
@@ -100,7 +117,7 @@ func (p PublicKey) DeterministicHashDerive() *PrivateKey {
 	priv := PrivateKey{}
 	for {
 		priv.D = new(big.Int).SetBytes(h[:])
-		priv.D = priv.D.Mod(priv.D, N)
+		priv.D.Mod(priv.D, N)
 		if priv.CheckScalar() {
 			break
 		}

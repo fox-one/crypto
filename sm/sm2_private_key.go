@@ -2,6 +2,7 @@ package sm
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -16,14 +17,40 @@ type (
 	}
 )
 
-func PrivateKeyFromBytes(key [33]byte) (*PrivateKey, error) {
+func NewPrivateKey(rand io.Reader) *PrivateKey {
+	var key [33]byte
+	for {
+		_, err := rand.Read(key[1:])
+		if err != nil {
+			continue
+		}
+
+		if priv, err := PrivateKeyFromBytes(&key); err == nil && priv.D.Cmp(prvThreshold) >= 0 {
+			return priv
+		}
+	}
+}
+
+func PrivateKeyFromBytes(key *[33]byte) (*PrivateKey, error) {
 	if key[0] != 0 {
 		return nil, fmt.Errorf("invalid key with prefix: %d", key[0])
 	}
 	var priv PrivateKey
-	priv.D = new(big.Int).SetBytes(key[1:])
-	priv.D = priv.D.Mod(priv.D, N)
-	priv.key = &key
+	d := new(big.Int).SetBytes(key[1:])
+	priv.D = d.Mod(d, N)
+
+	if !priv.CheckScalar() {
+		return nil, fmt.Errorf("invalid key: %s", hex.EncodeToString(key[:]))
+	}
+
+	// update key
+	if d.Cmp(priv.D) != 0 {
+		var k [33]byte
+		copy(k[33-len(priv.D.Bytes()):], priv.D.Bytes())
+		*key = k
+	}
+
+	priv.key = key
 	return &priv, nil
 }
 
@@ -58,7 +85,10 @@ func (p *PrivateKey) PublicKey() *PublicKey {
 func (p PrivateKey) AddPrivate(p1 PrivateKey) (*PrivateKey, error) {
 	s := PrivateKey{}
 	s.D = new(big.Int).Add(p.D, p1.D)
-	s.D = s.D.Mod(s.D, N)
+	s.D.Mod(s.D, N)
+	if !s.CheckScalar() {
+		return &s, errors.New("invalid private key")
+	}
 	return &s, nil
 }
 
