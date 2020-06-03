@@ -71,3 +71,7 @@ func (p PrivateKey) ScalarMult(pub PublicKey) (*PublicKey, error) {
 func (p *PrivateKey) Sign(random io.Reader, message []byte) ([64]byte, error) {
 	return factory.Sm2Sign(random, p, message)
 }
+
+func (p *PrivateKey) Decrypt(encryptedText []byte) ([]byte, error) {
+	return factory.Sm2Decrypt(p, encryptedText)
+}

@@ -1,6 +1,7 @@
 package sm
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -110,4 +111,8 @@ func (p PublicKey) DeterministicHashDerive() *PrivateKey {
 
 func (p PublicKey) Verify(message []byte, sig [64]byte) bool {
 	return factory.Sm2Verify(&p, message, sig)
+}
+
+func (p *PublicKey) Encrypt(plainText []byte) ([]byte, error) {
+	return factory.Sm2Encrypt(rand.Reader, p, plainText)
 }
