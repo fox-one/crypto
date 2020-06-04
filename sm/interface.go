@@ -13,8 +13,8 @@ type KeyFactory interface {
 	Sm3Sum(message []byte) (digest [32]byte)
 
 	// sm4
-	Sm4CBCEncrypt(key, iv [16]byte, plainText []byte) ([]byte, error)
-	Sm4CBCDecrypt(key, iv [16]byte, cipherText []byte) ([]byte, error)
+	Sm4CBCEncrypt(key, iv, plainText []byte) ([]byte, error)
+	Sm4CBCDecrypt(key, iv, cipherText []byte) ([]byte, error)
 }
 
 var factory KeyFactory

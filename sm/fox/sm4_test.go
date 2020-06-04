@@ -14,12 +14,12 @@ func BenchmarkSM4(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var (
 			raw = make([]byte, 1+mathRand.Int()%1688)
-			key [16]byte
-			iv  [16]byte
+			key = make([]byte, 16)
+			iv  = make([]byte, 16)
 		)
 		rand.Reader.Read(raw)
-		rand.Reader.Read(key[:])
-		rand.Reader.Read(iv[:])
+		rand.Reader.Read(key)
+		rand.Reader.Read(iv)
 
 		encryptedText, err := factory.Sm4CBCEncrypt(key, iv, raw)
 		if err != nil {

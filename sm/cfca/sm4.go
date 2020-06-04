@@ -14,7 +14,7 @@ import (
 	"unsafe"
 )
 
-func (f smFactory) Sm4CBCEncrypt(key, iv [16]byte, plainText []byte) ([]byte, error) {
+func (f smFactory) Sm4CBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
 	var (
 		sm4Key  = append(iv[:], key[:]...)
 		data    = (*C.uchar)(nil)
@@ -35,9 +35,9 @@ func (f smFactory) Sm4CBCEncrypt(key, iv [16]byte, plainText []byte) ([]byte, er
 	return dst, nil
 }
 
-func (f smFactory) Sm4CBCDecrypt(key, iv [16]byte, encryptedText []byte) ([]byte, error) {
+func (f smFactory) Sm4CBCDecrypt(key, iv, encryptedText []byte) ([]byte, error) {
 	var (
-		sm4Key  = append(iv[:], key[:]...)
+		sm4Key  = append(iv, key...)
 		data    = (*C.uchar)(nil)
 		dataLen = C.int(0)
 	)
