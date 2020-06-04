@@ -116,3 +116,16 @@ func PublicKeyFromBytes(key *[33]byte) (*PublicKey, error) {
 	}
 	return &pub, nil
 }
+
+func (p PrivateKey) Bytes() [33]byte {
+	var k [33]byte
+	copy(k[33-len(p.D.Bytes()):], p.D.Bytes())
+	return k
+}
+
+func (p PublicKey) Bytes() [33]byte {
+	var k [33]byte
+	copy(k[33-len(p.X.Bytes()):], p.X.Bytes())
+	k[0] = byte(2 + p.Y.Bit(0))
+	return k
+}
