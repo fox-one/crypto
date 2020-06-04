@@ -11,6 +11,7 @@ import "C"
 
 import (
 	"fmt"
+	"os"
 	"unsafe"
 
 	"github.com/fox-one/crypto/sm"
@@ -35,13 +36,18 @@ func RequestLicense() error {
 	return nil
 }
 
-func Load(licensePath string) (result int) {
+func Load() (result int) {
 	result = int(C.Initialize())
 	if result != 0 {
 		return
 	}
 
-	var szLicenseFilePath = C.CString(licensePath)
+	cfcaLicense := os.Getenv("CFCA_LICENSE")
+	if cfcaLicense == "" {
+		cfcaLicense = "/license/cfca.license"
+	}
+
+	var szLicenseFilePath = C.CString(cfcaLicense)
 	defer C.free(unsafe.Pointer(szLicenseFilePath))
 	result = int(C.ImportLicenseFile(szLicenseFilePath))
 	if result != 0 {

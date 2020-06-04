@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	Load("/license/cfca.license")
+	Load()
 }
 
 func BenchmarkSM2Sign(b *testing.B) {
