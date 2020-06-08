@@ -31,27 +31,30 @@ func NewPrivateKey(rand io.Reader) *PrivateKey {
 	}
 }
 
+func PrivateKeyFromInteger(d *big.Int) (*PrivateKey, error) {
+	var priv PrivateKey
+	priv.D = new(big.Int).Mod(d, N)
+	if !priv.CheckScalar() {
+		return nil, fmt.Errorf("invalid key: %v", d)
+	}
+	return &priv, nil
+}
+
 func PrivateKeyFromBytes(key *[33]byte) (*PrivateKey, error) {
 	if key[0] != 0 {
 		return nil, fmt.Errorf("invalid key with prefix: %d", key[0])
 	}
-	var priv PrivateKey
 	d := new(big.Int).SetBytes(key[1:])
-	priv.D = d.Mod(d, N)
-
-	if !priv.CheckScalar() {
-		return nil, fmt.Errorf("invalid key: %s", hex.EncodeToString(key[:]))
+	priv, err := PrivateKeyFromInteger(d)
+	if err != nil {
+		return nil, err
 	}
 
 	// update key
-	if d.Cmp(priv.D) != 0 {
-		var k [33]byte
-		copy(k[33-len(priv.D.Bytes()):], priv.D.Bytes())
-		*key = k
+	if d.Cmp(priv.D) == 0 {
+		priv.key = key
 	}
-
-	priv.key = key
-	return &priv, nil
+	return priv, nil
 }
 
 func (p PrivateKey) CheckScalar() bool {
@@ -82,7 +85,7 @@ func (p *PrivateKey) PublicKey() *PublicKey {
 	return p.publicKey
 }
 
-func (p PrivateKey) AddPrivate(p1 PrivateKey) (*PrivateKey, error) {
+func (p PrivateKey) AddPrivate(p1 *PrivateKey) (*PrivateKey, error) {
 	s := PrivateKey{}
 	s.D = new(big.Int).Add(p.D, p1.D)
 	s.D.Mod(s.D, N)
@@ -92,7 +95,7 @@ func (p PrivateKey) AddPrivate(p1 PrivateKey) (*PrivateKey, error) {
 	return &s, nil
 }
 
-func (p PrivateKey) ScalarMult(pub PublicKey) (*PublicKey, error) {
+func (p PrivateKey) ScalarMult(pub *PublicKey) (*PublicKey, error) {
 	var s PublicKey
 	s.X, s.Y = sm2P256.ScalarMult(pub.X, pub.Y, p.D.Bytes())
 	return &s, nil

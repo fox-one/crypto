@@ -43,11 +43,11 @@ func init() {
 }
 
 func (f smFactory) za(pub *sm.PublicKey) [32]byte {
-	var xBts [32]byte
-	copy(xBts[32-len(pub.X.Bytes()):], pub.X.Bytes())
-	msg := append(zaPrefix, xBts[:]...)
-	msg = append(msg, pub.Y.Bytes()...)
-	return f.Sm3Sum(msg)
+	data := make([]byte, len(zaPrefix)+64)
+	copy(data, zaPrefix)
+	copy(data[len(zaPrefix)+32-len(pub.X.Bytes()):], pub.X.Bytes())
+	copy(data[len(zaPrefix)+32:], pub.Y.Bytes())
+	return f.Sm3Sum(data[:len(zaPrefix)+32+len(pub.Y.Bytes())])
 }
 
 func (f smFactory) Sm2Sign(random io.Reader, p *sm.PrivateKey, message []byte) (signature [64]byte, err error) {
@@ -113,10 +113,9 @@ func (f smFactory) Sm2Verify(pub *sm.PublicKey, message []byte, signature [64]by
 		return false
 	}
 
-	var x *big.Int
 	x1, y1 := sm2P256.ScalarBaseMult(s.Bytes())
 	x2, y2 := sm2P256.ScalarMult(pub.X, pub.Y, t.Bytes())
-	x, _ = sm2P256.Add(x1, y1, x2, y2)
+	x, _ := sm2P256.Add(x1, y1, x2, y2)
 
 	x.Add(x, e)
 	x.Mod(x, N)

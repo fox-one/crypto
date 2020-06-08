@@ -73,7 +73,7 @@ func (p PublicKey) CheckKey() bool {
 	return true
 }
 
-func (p PublicKey) AddPublic(p1 PublicKey) (*PublicKey, error) {
+func (p PublicKey) AddPublic(p1 *PublicKey) (*PublicKey, error) {
 	s := PublicKey{}
 	s.X, s.Y = sm2P256.Add(p.X, p.Y, p1.X, p1.Y)
 	if !s.CheckKey() {
@@ -82,7 +82,7 @@ func (p PublicKey) AddPublic(p1 PublicKey) (*PublicKey, error) {
 	return &s, nil
 }
 
-func (p PublicKey) SubPublic(p1 PublicKey) (*PublicKey, error) {
+func (p PublicKey) SubPublic(p1 *PublicKey) (*PublicKey, error) {
 	s := PublicKey{}
 	Y1 := new(big.Int).Neg(p1.Y)
 	s.X, s.Y = sm2P256.Add(p.X, p.Y, p1.X, Y1)
