@@ -27,8 +27,12 @@ func RequestLicense() error {
 		return fmt.Errorf("Initialize failed:Error code[0x%8x].", result)
 	}
 
+	cfcaRequestPath := os.Getenv("CFCA_REQUEST_PATH")
+	if cfcaRequestPath == "" {
+		cfcaRequestPath = "/hx/cfca.activation"
+	}
 	// Create activation request
-	var szActivationFilePath = C.CString("./cfca.activation")
+	var szActivationFilePath = C.CString(cfcaRequestPath)
 	defer C.free(unsafe.Pointer(szActivationFilePath))
 	if result = int(C.GenerateActivationRequset(szActivationFilePath)); result != 0 {
 		return fmt.Errorf("GenerateActivationRequset failed:Error code[0x%8x].", result)
@@ -44,7 +48,7 @@ func Load() (result int) {
 
 	cfcaLicense := os.Getenv("CFCA_LICENSE")
 	if cfcaLicense == "" {
-		cfcaLicense = "/license/cfca.license"
+		cfcaLicense = "/hx/cfca.license"
 	}
 
 	var szLicenseFilePath = C.CString(cfcaLicense)
