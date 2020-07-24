@@ -20,7 +20,7 @@ func PublicKeyFromBytes(key *[33]byte) (*PublicKey, error) {
 		return nil, fmt.Errorf("invalid key with prefix: %d", key[0])
 	}
 
-	pub := PublicKey{}
+	pub := &PublicKey{}
 	X := new(big.Int).SetBytes(key[1:])
 	pub.X = X.Mod(X, P)
 
@@ -30,7 +30,7 @@ func PublicKeyFromBytes(key *[33]byte) (*PublicKey, error) {
 		ySqured := new(big.Int).Sub(xCubed, threeX)
 		ySqured.Add(ySqured, B)
 		pub.Y = new(big.Int).ModSqrt(ySqured, P)
-		if pub.Y == nil || !pub.CheckKey() {
+		if pub.Y == nil || !CheckKey(pub) {
 			return nil, fmt.Errorf("invalid key value: %s", hex.EncodeToString(key[:]))
 		}
 
@@ -47,7 +47,7 @@ func PublicKeyFromBytes(key *[33]byte) (*PublicKey, error) {
 		*key = k
 	}
 
-	return &pub, nil
+	return pub, nil
 }
 
 func (p *PublicKey) Bytes() [33]byte {
@@ -66,70 +66,70 @@ func (p *PublicKey) String() string {
 	return hex.EncodeToString(data[:])
 }
 
-func (p PublicKey) CheckKey() bool {
+func CheckKey(p *PublicKey) bool {
 	if p.X.Sign() == 0 || (Gnx.Cmp(p.X) == 0 && Gny.Cmp(p.Y) == 0) {
 		return false
 	}
 	return true
 }
 
-func (p PublicKey) AddPublic(p1 *PublicKey) (*PublicKey, error) {
-	s := PublicKey{}
+func AddPublic(p, p1 *PublicKey) (*PublicKey, error) {
+	s := &PublicKey{}
 	s.X, s.Y = sm2P256.Add(p.X, p.Y, p1.X, p1.Y)
-	if !s.CheckKey() {
-		return &s, errors.New("invalid public key")
+	if !CheckKey(s) {
+		return s, errors.New("invalid public key")
 	}
-	return &s, nil
+	return s, nil
 }
 
 func (p PublicKey) SubPublic(p1 *PublicKey) (*PublicKey, error) {
-	s := PublicKey{}
+	s := &PublicKey{}
 	Y1 := new(big.Int).Neg(p1.Y)
 	s.X, s.Y = sm2P256.Add(p.X, p.Y, p1.X, Y1)
-	if !s.CheckKey() {
-		return &s, errors.New("invalid public key")
+	if !CheckKey(s) {
+		return s, errors.New("invalid public key")
 	}
-	return &s, nil
+	return s, nil
 }
 
-func (p PublicKey) ScalarHash(outputIndex uint64) *PrivateKey {
+func ScalarHash(p PublicKey, outputIndex uint64) *PrivateKey {
 	data := append(p.X.Bytes(), big.NewInt(int64(outputIndex)).Bytes()...)
 	data = append(data, p.Y.Bytes()...)
 	h := Sm3Sum(data)
 	h = Sm3Sum(append(data, h[:]...))
 
-	priv := PrivateKey{}
+	priv := &PrivateKey{}
 	for {
 		priv.D = new(big.Int).SetBytes(h[:])
 		priv.D.Mod(priv.D, N)
-		if priv.CheckScalar() {
+		if CheckScalar(priv) {
 			break
 		}
 		h = Sm3Sum(append(h[:], h[:]...))
 	}
-	return &priv
+	return priv
 }
 
 func (p PublicKey) DeterministicHashDerive() *PrivateKey {
 	data := append(p.X.Bytes(), p.Y.Bytes()...)
 	h := Sm3Sum(data)
 
-	priv := PrivateKey{}
+	priv := &PrivateKey{}
 	for {
 		priv.D = new(big.Int).SetBytes(h[:])
 		priv.D.Mod(priv.D, N)
-		if priv.CheckScalar() {
+		if CheckScalar(priv) {
 			break
 		}
 		h = Sm3Sum(append(h[:], h[:]...))
 	}
-	return &priv
+	return priv
 }
 
-func (p PublicKey) Verify(message []byte, sig [64]byte) bool {
-	return factory.Sm2Verify(&p, message, sig)
+func Verify(p *PublicKey, message []byte, sig [64]byte) bool {
+	return factory.Sm2Verify(p, message, sig)
 }
 
-func (p *PublicKey) Encrypt(plainText []byte) ([]byte, error) {
+func Encrypt(p *PublicKey, plainText []byte) ([]byte, error) {
 	return factory.Sm2Encrypt(rand.Reader, p, plainText)
 }

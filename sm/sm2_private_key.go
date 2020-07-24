@@ -34,7 +34,7 @@ func NewPrivateKey(rand io.Reader) *PrivateKey {
 func PrivateKeyFromInteger(d *big.Int) (*PrivateKey, error) {
 	var priv PrivateKey
 	priv.D = new(big.Int).Mod(d, N)
-	if !priv.CheckScalar() {
+	if !CheckScalar(&priv) {
 		return nil, fmt.Errorf("invalid key: %v", d)
 	}
 	return &priv, nil
@@ -55,10 +55,6 @@ func PrivateKeyFromBytes(key *[33]byte) (*PrivateKey, error) {
 		priv.key = key
 	}
 	return priv, nil
-}
-
-func (p PrivateKey) CheckScalar() bool {
-	return p.D.Sign() != 0 && p.D.Cmp(nMinus) != 0
 }
 
 func (p *PrivateKey) Bytes() [33]byte {
@@ -85,26 +81,30 @@ func (p *PrivateKey) PublicKey() *PublicKey {
 	return p.publicKey
 }
 
-func (p PrivateKey) AddPrivate(p1 *PrivateKey) (*PrivateKey, error) {
-	s := PrivateKey{}
-	s.D = new(big.Int).Add(p.D, p1.D)
-	s.D.Mod(s.D, N)
-	if !s.CheckScalar() {
-		return &s, errors.New("invalid private key")
-	}
-	return &s, nil
+func CheckScalar(p *PrivateKey) bool {
+	return p.D.Sign() != 0 && p.D.Cmp(nMinus) != 0
 }
 
-func (p PrivateKey) ScalarMult(pub *PublicKey) (*PublicKey, error) {
+func AddPrivate(p, p1 *PrivateKey) (*PrivateKey, error) {
+	s := &PrivateKey{}
+	s.D = new(big.Int).Add(p.D, p1.D)
+	s.D.Mod(s.D, N)
+	if !CheckScalar(s) {
+		return s, errors.New("invalid private key")
+	}
+	return s, nil
+}
+
+func ScalarMult(p *PrivateKey, pub *PublicKey) (*PublicKey, error) {
 	var s PublicKey
 	s.X, s.Y = sm2P256.ScalarMult(pub.X, pub.Y, p.D.Bytes())
 	return &s, nil
 }
 
-func (p *PrivateKey) Sign(random io.Reader, message []byte) ([64]byte, error) {
+func Sign(random io.Reader, p *PrivateKey, message []byte) ([64]byte, error) {
 	return factory.Sm2Sign(random, p, message)
 }
 
-func (p *PrivateKey) Decrypt(encryptedText []byte) ([]byte, error) {
+func Decrypt(p *PrivateKey, encryptedText []byte) ([]byte, error) {
 	return factory.Sm2Decrypt(p, encryptedText)
 }
