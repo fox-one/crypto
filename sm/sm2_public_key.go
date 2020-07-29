@@ -92,7 +92,7 @@ func SubPublic(p, p1 *PublicKey) (*PublicKey, error) {
 	return s, nil
 }
 
-func ScalarHash(p PublicKey, outputIndex uint64) *PrivateKey {
+func ScalarHash(p *PublicKey, outputIndex uint64) *PrivateKey {
 	data := append(p.X.Bytes(), big.NewInt(int64(outputIndex)).Bytes()...)
 	data = append(data, p.Y.Bytes()...)
 	h := Sm3Sum(data)
@@ -110,7 +110,7 @@ func ScalarHash(p PublicKey, outputIndex uint64) *PrivateKey {
 	return priv
 }
 
-func DeterministicHashDerive(p PublicKey) *PrivateKey {
+func DeterministicHashDerive(p *PublicKey) *PrivateKey {
 	data := append(p.X.Bytes(), p.Y.Bytes()...)
 	h := Sm3Sum(data)
 
