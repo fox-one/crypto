@@ -82,7 +82,7 @@ func AddPublic(p, p1 *PublicKey) (*PublicKey, error) {
 	return s, nil
 }
 
-func (p PublicKey) SubPublic(p1 *PublicKey) (*PublicKey, error) {
+func SubPublic(p, p1 *PublicKey) (*PublicKey, error) {
 	s := &PublicKey{}
 	Y1 := new(big.Int).Neg(p1.Y)
 	s.X, s.Y = sm2P256.Add(p.X, p.Y, p1.X, Y1)
@@ -110,7 +110,7 @@ func ScalarHash(p PublicKey, outputIndex uint64) *PrivateKey {
 	return priv
 }
 
-func (p PublicKey) DeterministicHashDerive() *PrivateKey {
+func DeterministicHashDerive(p PublicKey) *PrivateKey {
 	data := append(p.X.Bytes(), p.Y.Bytes()...)
 	h := Sm3Sum(data)
 
