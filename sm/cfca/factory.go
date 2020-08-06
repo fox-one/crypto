@@ -29,7 +29,7 @@ func RequestLicense() error {
 
 	cfcaRequestPath := os.Getenv("CFCA_REQUEST_PATH")
 	if cfcaRequestPath == "" {
-		cfcaRequestPath = "/hx/cfca.activation"
+		cfcaRequestPath = "/cfca/cfca.activation"
 	}
 	// Create activation request
 	var szActivationFilePath = C.CString(cfcaRequestPath)
@@ -48,13 +48,14 @@ func Load() (result int) {
 
 	cfcaLicense := os.Getenv("CFCA_LICENSE")
 	if cfcaLicense == "" {
-		cfcaLicense = "/hx/cfca.license"
+		cfcaLicense = "/cfca/cfca.license"
 	}
 
 	var szLicenseFilePath = C.CString(cfcaLicense)
 	defer C.free(unsafe.Pointer(szLicenseFilePath))
 	result = int(C.ImportLicenseFile(szLicenseFilePath))
 	if result != 0 {
+		RequestLicense()
 		return
 	}
 

@@ -10,6 +10,7 @@ import (
 func GZipDecompress(binary []byte) ([]byte, error) {
 	byteReader := bytes.NewReader(binary)
 	gReader, err := gzip.NewReader(byteReader)
+	defer gReader.Close()
 
 	if err != nil {
 		return []byte{}, err
