@@ -42,15 +42,13 @@ func RequestLicense() error {
 	return nil
 }
 
-func Load() (result int) {
+func Load() int {
 	if CfcaLoadResult == 0 {
-		return
+		return CfcaLoadResult
 	}
-	defer CfcaLoadResult = result
 
-	result = int(C.Initialize())
-	if result != 0 {
-		return
+	if CfcaLoadResult = int(C.Initialize()); CfcaLoadResult != 0 {
+		return CfcaLoadResult
 	}
 
 	cfcaLicense := os.Getenv("CFCA_LICENSE")
@@ -60,12 +58,11 @@ func Load() (result int) {
 
 	var szLicenseFilePath = C.CString(cfcaLicense)
 	defer C.free(unsafe.Pointer(szLicenseFilePath))
-	result = int(C.ImportLicenseFile(szLicenseFilePath))
-	if result != 0 {
+	if CfcaLoadResult = int(C.ImportLicenseFile(szLicenseFilePath)); CfcaLoadResult != 0 {
 		RequestLicense()
-		return
+		return CfcaLoadResult
 	}
 
 	sm.SetupKeyFactory(smFactory{})
-	return
+	return CfcaLoadResult
 }
