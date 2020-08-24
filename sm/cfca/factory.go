@@ -19,6 +19,8 @@ import (
 
 type smFactory struct{}
 
+var CfcaLoadResult = -1
+
 func RequestLicense() error {
 	// Initialize
 	result := int(C.Initialize())
@@ -41,6 +43,11 @@ func RequestLicense() error {
 }
 
 func Load() (result int) {
+	if CfcaLoadResult == 0 {
+		return
+	}
+	defer CfcaLoadResult = result
+
 	result = int(C.Initialize())
 	if result != 0 {
 		return
