@@ -25,6 +25,11 @@ DLL_API(int) Initialize();
 
 DLL_API(int) Uninitialize();
 
+DLL_API(int) SM2KeyPairGenerate(unsigned char** ppbySM2PrivateKey,
+                                int*            pnSM2PrivateKey,
+                                unsigned char** ppbySM2PublicKey,
+                                int*            pnSM2PublicKey);
+
 DLL_API(int) SM2SignData(unsigned char*  pbySourceData,
                          int             nSourceData,
                          unsigned char*  pbySM2PublicKey,
@@ -57,6 +62,10 @@ DLL_API(int) SM2DecryptData(unsigned char*  pbyEncryptedData,
 
 DLL_API(int) SM3HashData(unsigned char*  pbySourceData,
                          int             nSourceData,
+                         unsigned char** ppbySM3Hash,
+                         int*            pnSM3Hash);
+
+DLL_API(int) SM3HashFile(const char*     szSourceFile,
                          unsigned char** ppbySM3Hash,
                          int*            pnSM3Hash);
 
